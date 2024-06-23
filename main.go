@@ -32,14 +32,14 @@ func organiserAgent(l llm.LLM) error {
 	if err != nil {
 		return fmt.Errorf("failed to get time breakdown: %w", err)
 	}
+	plan, err := planningAgent(l)
+	if err != nil {
+		return fmt.Errorf("failed to get planning: %w", err)
+	}
 	inputs := prompt.StrBlocks{
 		{
-			Key:  "People Info",
-			Vals: peopleInfoAgent(),
-		},
-		{
-			Key: "Travel Info",
-			Val: travelInfoAgent(),
+			Key: "Current Plan",
+			Val: plan,
 		},
 		{
 			Key: "Time Breakdown",
@@ -59,7 +59,7 @@ func organiserAgent(l llm.LLM) error {
 }
 
 func peopleInfoAgent() []string {
-	return []string{"Name: John Doe\nAge: 30\nOccupation: Software Engineer", "Name: Jane Doe\nAge: 28\nOccupation: Data Scientist"}
+	return []string{"Name: John Doe\nAge: 30\nOccupation: Software Engineer\nLikes: historical places", "Name: Jane Doe\nAge: 28\nOccupation: Data Scientist\nLikes: architecture"}
 }
 
 func travelInfoAgent() string {
@@ -67,7 +67,10 @@ func travelInfoAgent() string {
 }
 
 func timeBreakdownAgent(l llm.LLM) (string, error) {
-	plans := "Day 1: Visit Eiffel Tower for John\nDay 2: Visit Louvre Museum, but Jane may not want to go\nDay 3: Visit Notre Dame Cathedral"
+	plans, err := planningAgent(l)
+	if err != nil {
+		return "", fmt.Errorf("failed to get planning: %w", err)
+	}
 	inputs := prompt.StrBlocks{
 		{
 			Key: "Plan Info",
@@ -76,6 +79,28 @@ func timeBreakdownAgent(l llm.LLM) (string, error) {
 	}
 	resp, err := l.Chat(
 		"You are an expert in time management. You will be given a plan for a holiday. Now you need to break down the time you have into days and allocate activities to each day. Make sure you take into account the preferences of the people involved",
+		inputs.Build(),
+		nil,
+	)
+	if err != nil {
+		return "", fmt.Errorf("failed to chat: %w", err)
+	}
+	return resp.Text, nil
+}
+
+func planningAgent(l llm.LLM) (string, error) {
+	inputs := prompt.StrBlocks{
+		{
+			Key:  "People Info",
+			Vals: peopleInfoAgent(),
+		},
+		{
+			Key: "Travel Info",
+			Val: travelInfoAgent(),
+		},
+	}
+	resp, err := l.Chat(
+		"You are an expert in planning holidays. Your task is to plan a group holiday. You will be given information on the people involved and what each of them wants to do.  Take into account their preferences and plan a holiday that they will all enjoy.",
 		inputs.Build(),
 		nil,
 	)
