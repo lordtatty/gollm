@@ -27,34 +27,23 @@ func run() error {
 	return nil
 }
 
-type PlannerState struct {
-	PeopleInfo    []string
-	TravelInfo    string
-	TimeBreakdown string
-}
-
 func organiserAgent(l llm.LLM) error {
 	bkdwn, err := timeBreakdownAgent(l)
 	if err != nil {
 		return fmt.Errorf("failed to get time breakdown: %w", err)
 	}
-	state := &PlannerState{
-		PeopleInfo:    peopleInfoAgent(),
-		TravelInfo:    travelInfoAgent(),
-		TimeBreakdown: bkdwn,
-	}
 	inputs := prompt.StrBlocks{
 		{
 			Key:  "People Info",
-			Vals: state.PeopleInfo,
+			Vals: peopleInfoAgent(),
 		},
 		{
 			Key: "Travel Info",
-			Val: state.TravelInfo,
+			Val: travelInfoAgent(),
 		},
 		{
 			Key: "Time Breakdown",
-			Val: state.TimeBreakdown,
+			Val: bkdwn,
 		},
 	}
 	resp, err := l.Chat(
