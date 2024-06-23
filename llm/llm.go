@@ -12,9 +12,12 @@ func boolptr(b bool) *bool {
 type ChatOpts struct {
 	StreamCh chan string
 }
+type ChatResp struct {
+	Text string
+}
 
 type LLM interface {
-	Chat(systemMsg, userMsg string, streamCh chan string) (string, error)
+	Chat(systemMsg, userMsg string, streamCh chan string) (*ChatResp, error)
 }
 
 type LLMInstance struct {

@@ -20,7 +20,7 @@ type Groq struct {
 	Model  string
 }
 
-func (g *Groq) Chat(systemMsg, userMsg string, streamCh chan string) (string, error) {
+func (g *Groq) Chat(systemMsg, userMsg string, streamCh chan string) (*ChatResp, error) {
 	if g.Model == "" {
 		// default to smaller model
 		g.Model = GROQ_MODEL_LLAMA3_8B_8192
@@ -56,13 +56,13 @@ func (g *Groq) Chat(systemMsg, userMsg string, streamCh chan string) (string, er
 	// Convert request body to JSON
 	requestBodyBytes, err := json.Marshal(requestBody)
 	if err != nil {
-		return "", fmt.Errorf("failed to marshal request body: %w", err)
+		return nil, fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
 	// Create a new HTTP POST request
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(requestBodyBytes))
 	if err != nil {
-		return "", fmt.Errorf("failed to create HTTP request: %w", err)
+		return nil, fmt.Errorf("failed to create HTTP request: %w", err)
 	}
 
 	// Set headers
@@ -73,7 +73,7 @@ func (g *Groq) Chat(systemMsg, userMsg string, streamCh chan string) (string, er
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("failed to send HTTP request: %w", err)
+		return nil, fmt.Errorf("failed to send HTTP request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -82,9 +82,9 @@ func (g *Groq) Chat(systemMsg, userMsg string, streamCh chan string) (string, er
 		// Read the response body
 		responseBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return "", fmt.Errorf("failed to read non-200 response body: %w", err)
+			return nil, fmt.Errorf("failed to read non-200 response body: %w", err)
 		}
-		return "", fmt.Errorf("failed to send HTTP request: %s", string(responseBody))
+		return nil, fmt.Errorf("failed to send HTTP request: %s", string(responseBody))
 	}
 
 	// Handle streaming responses if required
@@ -99,7 +99,7 @@ func (g *Groq) Chat(systemMsg, userMsg string, streamCh chan string) (string, er
 					// End of response
 					break
 				}
-				return "", fmt.Errorf("failed to read response: %w", err)
+				return nil, fmt.Errorf("failed to read response: %w", err)
 			}
 
 			// Trim any leading/trailing whitespace
@@ -123,22 +123,22 @@ func (g *Groq) Chat(systemMsg, userMsg string, streamCh chan string) (string, er
 				// Decode the JSON object from the response body
 				var response map[string]interface{}
 				if err := decoder.Decode(&response); err != nil {
-					return "", fmt.Errorf("failed to decode response: %w", err)
+					return nil, fmt.Errorf("failed to decode response: %w", err)
 				}
 
 				// Check if the response contains "choices" field
 				choices, ok := response["choices"].([]interface{})
 				if !ok {
-					return "", fmt.Errorf("response 'choices' field is missing or not an array")
+					return nil, fmt.Errorf("response 'choices' field is missing or not an array")
 				}
 				for _, choice := range choices {
 					choiceMap, ok := choice.(map[string]interface{})
 					if !ok {
-						return "", fmt.Errorf("response 'choices' field contains invalid data")
+						return nil, fmt.Errorf("response 'choices' field contains invalid data")
 					}
 					delta, ok := choiceMap["delta"].(map[string]interface{})
 					if !ok {
-						return "", fmt.Errorf("response 'delta' field is missing or not an object")
+						return nil, fmt.Errorf("response 'delta' field is missing or not an object")
 					}
 					content, ok := delta["content"].(string)
 					if !ok {
@@ -155,10 +155,54 @@ func (g *Groq) Chat(systemMsg, userMsg string, streamCh chan string) (string, er
 		// Read the response body
 		responseBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return "", fmt.Errorf("failed to read response body: %w", err)
+			return nil, fmt.Errorf("failed to read response body: %w", err)
 		}
-		return string(responseBody), nil
+		completion := &ChatCompletion{}
+		if err := json.Unmarshal(responseBody, completion); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal response body: %w", err)
+		}
+		if len(completion.Choices) == 0 {
+			return nil, fmt.Errorf("no choices in response")
+		}
+		choice := completion.Choices[0]
+		return &ChatResp{
+			Text: choice.Message.Content,
+		}, nil
 	}
 
-	return "", nil
+	return nil, nil
+}
+
+type Choice struct {
+	Index   int `json:"index"`
+	Message struct {
+		Role    string `json:"role"`
+		Content string `json:"content"`
+	} `json:"message"`
+	Logprobs     interface{} `json:"logprobs"`
+	FinishReason string      `json:"finish_reason"`
+}
+
+type Usage struct {
+	PromptTokens     int     `json:"prompt_tokens"`
+	PromptTime       float64 `json:"prompt_time"`
+	CompletionTokens int     `json:"completion_tokens"`
+	CompletionTime   float64 `json:"completion_time"`
+	TotalTokens      int     `json:"total_tokens"`
+	TotalTime        float64 `json:"total_time"`
+}
+
+type XGroq struct {
+	ID string `json:"id"`
+}
+
+type ChatCompletion struct {
+	ID                string   `json:"id"`
+	Object            string   `json:"object"`
+	Created           int64    `json:"created"`
+	Model             string   `json:"model"`
+	Choices           []Choice `json:"choices"`
+	Usage             Usage    `json:"usage"`
+	SystemFingerprint string   `json:"system_fingerprint"`
+	XGroq             XGroq    `json:"x_groq"`
 }

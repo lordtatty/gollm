@@ -9,10 +9,10 @@ import (
 
 type Ollama struct{}
 
-func (o *Ollama) Chat(systemMsg, userMsg string, streamCh chan string) (string, error) {
+func (o *Ollama) Chat(systemMsg, userMsg string, streamCh chan string) (*ChatResp, error) {
 	ollama, err := ollamaApi.ClientFromEnvironment()
 	if err != nil {
-		return "", fmt.Errorf("failed to create ollama client: %w", err)
+		return nil, fmt.Errorf("failed to create ollama client: %w", err)
 	}
 	ctx := context.Background()
 	stream := boolptr(false)
@@ -37,16 +37,19 @@ func (o *Ollama) Chat(systemMsg, userMsg string, streamCh chan string) (string, 
 	})
 	req.Messages = messages
 	// Run
-	response := ""
+	text := ""
 	err = ollama.Chat(ctx, req, func(resp ollamaApi.ChatResponse) error {
 		if streamCh != nil {
 			streamCh <- resp.Message.Content
 		}
-		response += resp.Message.Content
+		text += resp.Message.Content
 		return nil
 	})
 	if err != nil {
-		return "", fmt.Errorf("failed to chat: %w", err)
+		return nil, fmt.Errorf("failed to chat: %w", err)
 	}
-	return response, nil
+	resp := &ChatResp{
+		Text: text,
+	}
+	return resp, nil
 }
