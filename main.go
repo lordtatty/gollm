@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/lordtatty/dstest/llm"
+	"github.com/lordtatty/dstest/prompt"
 )
 
 func main() {
@@ -37,16 +37,14 @@ func planner(l llm.LLM) error {
 		PeopleInfo: []string{"Name: John Doe\nAge: 30\nOccupation: Software Engineer", "Name: Jane Doe\nAge: 28\nOccupation: Data Scientist"},
 		TravelInfo: "Destination: Paris\nDuration: 3 days\nBudget: $1000",
 	}
-	inputs := StrBlocks{
-		Blocks: []StrBlock{
-			{
-				Key:  "Person Info",
-				Vals: state.PeopleInfo,
-			},
-			{
-				Key: "Travel Info",
-				Val: "Destination: Paris\nDuration: 3 days\nBudget: $1000",
-			},
+	inputs := prompt.StrBlocks{
+		{
+			Key:  "People Info",
+			Vals: state.PeopleInfo,
+		},
+		{
+			Key: "Travel Info",
+			Val: state.TravelInfo,
 		},
 	}
 	resp, err := l.Chat(
@@ -59,52 +57,4 @@ func planner(l llm.LLM) error {
 	}
 	fmt.Println(resp.Text)
 	return nil
-}
-
-type StrBlocks struct {
-	Blocks []StrBlock
-}
-
-func (s *StrBlocks) Build() string {
-	var sb strings.Builder
-	for _, block := range s.Blocks {
-		sb.WriteString(block.Build(block.Key, block.Val))
-		sb.WriteString("\n")
-	}
-	return sb.String()
-}
-
-func MultiStrBlock(key string, vals []string) []StrBlock {
-	b := []StrBlock{}
-	for _, v := range vals {
-		b = append(b, StrBlock{
-			Key: key,
-			Val: v,
-		})
-	}
-	return b
-}
-
-type StrBlock struct {
-	Key  string
-	Val  string
-	Vals []string
-}
-
-func (s *StrBlock) Build(key, value string) string {
-	vals := s.Vals
-	if s.Val != "" {
-		vals = append(s.Vals, s.Val)
-	}
-	var sb strings.Builder
-	for _, v := range vals {
-		sb.WriteString(s.buildOne(key, v))
-		sb.WriteString("\n")
-	}
-	return sb.String()
-}
-
-func (s *StrBlock) buildOne(key, value string) string {
-	key = strings.ToUpper(key)
-	return fmt.Sprintf("### %s START###\n%s\n### %s END###\n", key, value, key)
 }
