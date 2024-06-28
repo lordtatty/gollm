@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/lordtatty/dstest/llm"
-	"github.com/lordtatty/dstest/prompt"
+	"github.com/lordtatty/gollm/llm"
+	"github.com/lordtatty/gollm/prompt"
 )
 
 func main() {

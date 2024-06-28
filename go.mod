@@ -1,4 +1,4 @@
-module github.com/lordtatty/dstest
+module github.com/lordtatty/gollm
 
 go 1.22.2
 

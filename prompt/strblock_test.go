@@ -3,7 +3,7 @@ package prompt_test
 import (
 	"testing"
 
-	"github.com/lordtatty/dstest/prompt"
+	"github.com/lordtatty/gollm/prompt"
 	"github.com/stretchr/testify/assert"
 )
 
