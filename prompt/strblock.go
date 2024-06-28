@@ -7,10 +7,10 @@ import (
 
 type StrBlocks []StrBlock
 
-func (s StrBlocks) Build() string {
+func (s StrBlocks) String() string {
 	var sb strings.Builder
 	for _, block := range s {
-		sb.WriteString(block.Build(block.Key, block.Val))
+		sb.WriteString(block.String(block.Key, block.Val))
 	}
 	return sb.String()
 }
@@ -21,7 +21,7 @@ type StrBlock struct {
 	Vals []string
 }
 
-func (s *StrBlock) Build(key, value string) string {
+func (s *StrBlock) String(key, value string) string {
 	vals := s.Vals
 	if s.Val != "" {
 		vals = append(s.Vals, s.Val)

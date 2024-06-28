@@ -19,7 +19,7 @@ func TestStrBlock_Build(t *testing.T) {
 		},
 	}
 
-	result := sut.Build(sut.Key, sut.Val)
+	result := sut.String(sut.Key, sut.Val)
 
 	want := "### PEOPLE START###\nRudolf\n### PEOPLE END###\n\n"
 	want += "### PEOPLE START###\nMrs Claus\n### PEOPLE END###\n\n"
@@ -50,7 +50,7 @@ func TestStrBlocks_Build(t *testing.T) {
 		},
 	}
 
-	result := sut.Build()
+	result := sut.String()
 
 	want := "### PEOPLE START###\nRudolf\n### PEOPLE END###\n\n"
 	want += "### PEOPLE START###\nMrs Claus\n### PEOPLE END###\n\n"
