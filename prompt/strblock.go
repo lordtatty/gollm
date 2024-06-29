@@ -6,20 +6,20 @@ import (
 )
 
 type Msg struct {
-	Text        string
-	FixedKVs    StrBlocks
-	VariableKVs VariableKVs
+	Text           string
+	FixedBlocks    FixedBlocks
+	VariableBlocks VariableBlocks
 }
 
 func (m Msg) String(kv map[string]string) (string, error) {
 	parts := []string{}
 	// Fixed Inputs
-	fixedInputs := m.FixedKVs.String()
+	fixedInputs := m.FixedBlocks.String()
 	if fixedInputs != "" {
 		parts = append(parts, fixedInputs)
 	}
 	// Variable Inputs
-	inputBlocks, err := m.VariableKVs.FromVals(kv)
+	inputBlocks, err := m.VariableBlocks.FromVals(kv)
 	if err != nil {
 		return "", fmt.Errorf("missing values for input keys: %w", err)
 	}
@@ -34,20 +34,20 @@ func (m Msg) String(kv map[string]string) (string, error) {
 	return result, nil
 }
 
-type VariableKV struct {
+type VariableBlock struct {
 	Key   string
 	Label string
 }
 
-type VariableKVs []VariableKV
+type VariableBlocks []VariableBlock
 
-func (i *VariableKVs) FromVals(blockOutputs map[string]string) (string, error) {
-	var blocks StrBlocks
+func (i *VariableBlocks) FromVals(blockOutputs map[string]string) (string, error) {
+	var blocks FixedBlocks
 	for _, b := range *i {
 		if _, ok := blockOutputs[b.Key]; !ok {
 			return "", fmt.Errorf("block %s not found in blockOutputs", b.Key)
 		}
-		blocks = append(blocks, StrBlock{
+		blocks = append(blocks, FixedBlock{
 			Key:  b.Label,
 			Val:  blockOutputs[b.Key],
 			Vals: nil,
@@ -56,9 +56,9 @@ func (i *VariableKVs) FromVals(blockOutputs map[string]string) (string, error) {
 	return blocks.String(), nil
 }
 
-type StrBlocks []StrBlock
+type FixedBlocks []FixedBlock
 
-func (s StrBlocks) String() string {
+func (s FixedBlocks) String() string {
 	var sb strings.Builder
 	for _, block := range s {
 		sb.WriteString(block.String(block.Key, block.Val))
@@ -66,13 +66,13 @@ func (s StrBlocks) String() string {
 	return sb.String()
 }
 
-type StrBlock struct {
+type FixedBlock struct {
 	Key  string
 	Val  string
 	Vals []string
 }
 
-func (s *StrBlock) String(key, value string) string {
+func (s *FixedBlock) String(key, value string) string {
 	vals := s.Vals
 	if s.Val != "" {
 		vals = append(s.Vals, s.Val)
@@ -85,7 +85,7 @@ func (s *StrBlock) String(key, value string) string {
 	return sb.String()
 }
 
-func (s *StrBlock) buildOne(key, value string) string {
+func (s *FixedBlock) buildOne(key, value string) string {
 	key = strings.ToUpper(key)
 	return fmt.Sprintf("### %s START###\n%s\n### %s END###\n", key, value, key)
 }

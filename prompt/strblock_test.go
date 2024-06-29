@@ -12,13 +12,13 @@ func TestMsg_String(t *testing.T) {
 
 	sut := prompt.Msg{
 		Text: "user message",
-		VariableKVs: prompt.VariableKVs{
+		VariableBlocks: prompt.VariableBlocks{
 			{
 				Key:   "Key1",
 				Label: "given key 1",
 			},
 		},
-		FixedKVs: prompt.StrBlocks{
+		FixedBlocks: prompt.FixedBlocks{
 			{
 				Key: "Fixed Key 1",
 				Val: "Fixed Value 1",
@@ -38,7 +38,7 @@ func TestMsg_String_MissingKeys(t *testing.T) {
 
 	sut := prompt.Msg{
 		Text: "user message",
-		VariableKVs: prompt.VariableKVs{
+		VariableBlocks: prompt.VariableBlocks{
 			{
 				Key:   "Key1",
 				Label: "given key 1",
@@ -55,7 +55,7 @@ func TestMsg_String_MissingKeys(t *testing.T) {
 func TestStrBlock_Build(t *testing.T) {
 	assert := assert.New(t)
 
-	sut := prompt.StrBlock{
+	sut := prompt.FixedBlock{
 		Key: "People",
 		Val: "Santa Claus",
 		Vals: []string{
@@ -76,7 +76,7 @@ func TestStrBlock_Build(t *testing.T) {
 func TestStrBlocks_Build(t *testing.T) {
 	assert := assert.New(t)
 
-	sut := prompt.StrBlocks{
+	sut := prompt.FixedBlocks{
 		{
 			Key: "People",
 			Val: "Santa Claus",
