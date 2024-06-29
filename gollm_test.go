@@ -14,6 +14,7 @@ func TestLLMBlock_Run(t *testing.T) {
 
 	wantSysMsg := "system message"
 	wantUsrMsg := "userMsg"
+	variableKVs := map[string]string{"Key1": "Value1"}
 
 	chatResp := &llm.ChatResp{
 		Text: "response message",
@@ -23,7 +24,7 @@ func TestLLMBlock_Run(t *testing.T) {
 	mLLM.EXPECT().Chat(wantSysMsg, wantUsrMsg, ch).Return(chatResp, nil)
 
 	mUserMsg := mocks.NewUserMsg(t)
-	mUserMsg.EXPECT().String(map[string]string{"Key1": "Value1"}).Return(wantUsrMsg, nil)
+	mUserMsg.EXPECT().String(variableKVs).Return(wantUsrMsg, nil)
 
 	sut := gollm.LLMBlock{
 		LLM:       mLLM,
@@ -32,7 +33,7 @@ func TestLLMBlock_Run(t *testing.T) {
 		UserMsg:   mUserMsg,
 	}
 
-	result, err := sut.Run(map[string]string{"Key1": "Value1"})
+	result, err := sut.Run(variableKVs)
 	assert.Nil(err)
 
 	want := &gollm.BlockResult{
