@@ -2,27 +2,49 @@ package gollm
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/lordtatty/gollm/llm"
 	"github.com/lordtatty/gollm/prompt"
 )
 
 type Msg struct {
-	Text string
+	Text        string
+	FixedKVs    prompt.StrBlocks
+	VariableKVs VariableKVs
 }
 
-func (m Msg) String() string {
-	return m.Text
+func (m Msg) String(kv map[string]string) (string, error) {
+	parts := []string{}
+	// Fixed Inputs
+	fixedInputs := m.FixedKVs.String()
+	if fixedInputs != "" {
+		parts = append(parts, fixedInputs)
+	}
+	// Variable Inputs
+	inputBlocks, err := m.VariableKVs.FromVals(kv)
+	if err != nil {
+		return "", fmt.Errorf("missing values for input keys: %w", err)
+	}
+	if inputBlocks != "" {
+		parts = append(parts, inputBlocks)
+	}
+	// Prompt Text
+	if m.Text != "" {
+		parts = append(parts, m.Text)
+	}
+	result := strings.Join(parts, "\n\n")
+	return result, nil
 }
 
-type ExpectKey struct {
+type VariableKV struct {
 	Key   string
 	Label string
 }
 
-type ExpectKeys []ExpectKey
+type VariableKVs []VariableKV
 
-func (i *ExpectKeys) FromVals(name string, blockOutputs map[string]string) (string, error) {
+func (i *VariableKVs) FromVals(blockOutputs map[string]string) (string, error) {
 	var blocks prompt.StrBlocks
 	for _, b := range *i {
 		if _, ok := blockOutputs[b.Key]; !ok {
@@ -38,15 +60,14 @@ func (i *ExpectKeys) FromVals(name string, blockOutputs map[string]string) (stri
 }
 
 type UserMsg interface {
-	String() string
+	String(kv map[string]string) (string, error)
 }
 
 type LLMBlock struct {
-	Name       string
-	LLM        llm.LLM
-	SystemMsg  string
-	UserMsg    UserMsg
-	ExpectKeys ExpectKeys
+	Name      string
+	LLM       llm.LLM
+	SystemMsg string
+	UserMsg   UserMsg
 }
 
 type BlockResult struct {
@@ -55,12 +76,11 @@ type BlockResult struct {
 }
 
 func (b *LLMBlock) Run(inputs map[string]string) (*BlockResult, error) {
-	inputBlocks, err := b.ExpectKeys.FromVals(b.Name, inputs)
+	userMsg, err := b.UserMsg.String(inputs)
 	if err != nil {
-		return nil, fmt.Errorf("missing values for input keys: %w", err)
+		return nil, fmt.Errorf("failed to get user message: %w", err)
 	}
-	fulInput := inputBlocks + "\n\n" + b.UserMsg.String()
-	resp, err := b.LLM.Chat(b.SystemMsg, fulInput, nil)
+	resp, err := b.LLM.Chat(b.SystemMsg, userMsg, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to chat: %w", err)
 	}
@@ -74,20 +94,15 @@ type Sequential struct {
 	Blocks []LLMBlock
 }
 
-// func (s *Sequential) Run() error {
-// 	blockOutputs := make(map[string]string)
-// 	for i, block := range s.Blocks {
-// 		prevInputs, err := block.IncludeBlocks.AsStrBlocks(block.Name, blockOutputs)
-// 		if err != nil {
-// 			return fmt.Errorf("failed to get include blocks for block %d: %w", i, err)
-// 		}
-// 		fulInput := prevInputs.String() + "\n\n" + block.UserMsg.String()
-// 		resp, err := block.LLM.Chat(block.SystemMsg, fulInput, nil)
-// 		if err != nil {
-// 			return fmt.Errorf("failed to chat block %d: %w", i, err)
-// 		}
-// 		blockOutputs[block.Name] = resp.Text
-// 		fmt.Println(resp.Text)
-// 	}
-// 	return nil
-// }
+func (s *Sequential) Run() error {
+	blockOutputs := make(map[string]string)
+	for i, block := range s.Blocks {
+		resp, err := block.Run(blockOutputs)
+		if err != nil {
+			return fmt.Errorf("failed to run block %d: %w", i, err)
+		}
+		blockOutputs[block.Name] = resp.Text
+		fmt.Println(resp.Text)
+	}
+	return nil
+}
