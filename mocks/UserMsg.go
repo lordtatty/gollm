@@ -17,22 +17,32 @@ func (_m *UserMsg) EXPECT() *UserMsg_Expecter {
 	return &UserMsg_Expecter{mock: &_m.Mock}
 }
 
-// String provides a mock function with given fields:
-func (_m *UserMsg) String() string {
-	ret := _m.Called()
+// String provides a mock function with given fields: kv
+func (_m *UserMsg) String(kv map[string]string) (string, error) {
+	ret := _m.Called(kv)
 
 	if len(ret) == 0 {
 		panic("no return value specified for String")
 	}
 
 	var r0 string
-	if rf, ok := ret.Get(0).(func() string); ok {
-		r0 = rf()
+	var r1 error
+	if rf, ok := ret.Get(0).(func(map[string]string) (string, error)); ok {
+		return rf(kv)
+	}
+	if rf, ok := ret.Get(0).(func(map[string]string) string); ok {
+		r0 = rf(kv)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(map[string]string) error); ok {
+		r1 = rf(kv)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // UserMsg_String_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'String'
@@ -41,23 +51,24 @@ type UserMsg_String_Call struct {
 }
 
 // String is a helper method to define mock.On call
-func (_e *UserMsg_Expecter) String() *UserMsg_String_Call {
-	return &UserMsg_String_Call{Call: _e.mock.On("String")}
+//   - kv map[string]string
+func (_e *UserMsg_Expecter) String(kv interface{}) *UserMsg_String_Call {
+	return &UserMsg_String_Call{Call: _e.mock.On("String", kv)}
 }
 
-func (_c *UserMsg_String_Call) Run(run func()) *UserMsg_String_Call {
+func (_c *UserMsg_String_Call) Run(run func(kv map[string]string)) *UserMsg_String_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run()
+		run(args[0].(map[string]string))
 	})
 	return _c
 }
 
-func (_c *UserMsg_String_Call) Return(_a0 string) *UserMsg_String_Call {
-	_c.Call.Return(_a0)
+func (_c *UserMsg_String_Call) Return(_a0 string, _a1 error) *UserMsg_String_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *UserMsg_String_Call) RunAndReturn(run func() string) *UserMsg_String_Call {
+func (_c *UserMsg_String_Call) RunAndReturn(run func(map[string]string) (string, error)) *UserMsg_String_Call {
 	_c.Call.Return(run)
 	return _c
 }
