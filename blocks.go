@@ -36,20 +36,3 @@ func (b *LLMBlock) Run(inputs map[string]string) (*BlockResult, error) {
 		Text: resp.Text,
 	}, nil
 }
-
-type Sequential struct {
-	Blocks []LLMBlock
-}
-
-func (s *Sequential) Run() error {
-	blockOutputs := make(map[string]string)
-	for i, block := range s.Blocks {
-		resp, err := block.Run(blockOutputs)
-		if err != nil {
-			return fmt.Errorf("failed to run block %d: %w", i, err)
-		}
-		blockOutputs[block.Name] = resp.Text
-		fmt.Println(resp.Text)
-	}
-	return nil
-}
