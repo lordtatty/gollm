@@ -53,6 +53,14 @@ func (r *FlowResp) setOutput(name string, output BlockResult) {
 	r.Outputs[name] = output
 }
 
+func (r *FlowResp) OutputStrs() map[string]string {
+	result := make(map[string]string)
+	for name, output := range r.Outputs {
+		result[name] = output.Text
+	}
+	return result
+}
+
 func Flow(blocks RunnableBlocks) (*FlowResp, error) {
 	if err := blocks.Valid(); err != nil {
 		return nil, fmt.Errorf("invalid blocks: %w", err)
@@ -61,15 +69,13 @@ func Flow(blocks RunnableBlocks) (*FlowResp, error) {
 		NotRun:  blocks.Names(),
 		Outputs: make(map[string]BlockResult),
 	}
-	kvMap := make(map[string]string) // Passed into each block, appended with block responses
 	for i, block := range blocks {
 		result.markRun(block.Name())
-		resp, err := block.Run(kvMap)
+		resp, err := block.Run(result.OutputStrs())
 		if err != nil {
 			return nil, fmt.Errorf("failed to run block %d, %s: %w", i, block.Name(), err)
 		}
 		result.setOutput(block.Name(), *resp)
-		kvMap[block.Name()] = resp.Text
 	}
 	return result, nil
 }
