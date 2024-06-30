@@ -36,3 +36,7 @@ func (b *LLMBlock) Run(inputs map[string]string) (*BlockResult, error) {
 		Text: resp.Text,
 	}, nil
 }
+
+func (b *LLMBlock) UniqName() string {
+	return b.Name
+}

@@ -12,9 +12,9 @@ func TestRunnableBlocks_Names(t *testing.T) {
 	assert := assert.New(t)
 
 	mBlock1 := mocks.NewRunnableBlock(t)
-	mBlock1.EXPECT().Name().Return("block1")
+	mBlock1.EXPECT().UniqName().Return("block1")
 	mBlock2 := mocks.NewRunnableBlock(t)
-	mBlock2.EXPECT().Name().Return("block2")
+	mBlock2.EXPECT().UniqName().Return("block2")
 
 	sut := gollm.RunnableBlocks{
 		mBlock1,
@@ -31,11 +31,11 @@ func TestRunnableBlocks_Valid_IsInvalid(t *testing.T) {
 	assert := assert.New(t)
 
 	mBlock1 := mocks.NewRunnableBlock(t)
-	mBlock1.EXPECT().Name().Return("block1")
+	mBlock1.EXPECT().UniqName().Return("block1")
 	mBlock2 := mocks.NewRunnableBlock(t)
-	mBlock2.EXPECT().Name().Return("block2")
+	mBlock2.EXPECT().UniqName().Return("block2")
 	mBlock3 := mocks.NewRunnableBlock(t)
-	mBlock3.EXPECT().Name().Return("block2") // Duplicate name
+	mBlock3.EXPECT().UniqName().Return("block2") // Duplicate name
 
 	sut := gollm.RunnableBlocks{
 		mBlock1,
@@ -53,10 +53,10 @@ func TestFlow(t *testing.T) {
 	assert := assert.New(t)
 
 	mBlock1 := mocks.NewRunnableBlock(t)
-	mBlock1.EXPECT().Name().Return("block1")
+	mBlock1.EXPECT().UniqName().Return("block1")
 	mBlock1.EXPECT().Run(map[string]string{}).Return(&gollm.BlockResult{Text: "response1"}, nil)
 	mBlock2 := mocks.NewRunnableBlock(t)
-	mBlock2.EXPECT().Name().Return("block2")
+	mBlock2.EXPECT().UniqName().Return("block2")
 	mBlock2.EXPECT().Run(map[string]string{"block1": "response1"}).Return(&gollm.BlockResult{Text: "response2"}, nil)
 
 	blocks := []gollm.RunnableBlock{mBlock1, mBlock2}

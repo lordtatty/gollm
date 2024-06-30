@@ -5,7 +5,7 @@ import (
 )
 
 type RunnableBlock interface {
-	Name() string
+	UniqName() string
 	Run(map[string]string) (*BlockResult, error)
 }
 
@@ -14,7 +14,7 @@ type RunnableBlocks []RunnableBlock
 func (r *RunnableBlocks) Names() []string {
 	names := []string{}
 	for _, block := range *r {
-		names = append(names, block.Name())
+		names = append(names, block.UniqName())
 	}
 	return names
 }
@@ -23,7 +23,7 @@ func (r *RunnableBlocks) Valid() error {
 	// ensure all blocks have unique names
 	names := map[string]struct{}{}
 	for _, block := range *r {
-		name := block.Name()
+		name := block.UniqName()
 		if _, ok := names[name]; ok {
 			return fmt.Errorf("block name %s is not unique", name)
 		}
@@ -70,12 +70,12 @@ func Flow(blocks RunnableBlocks) (*FlowResp, error) {
 		Outputs: make(map[string]BlockResult),
 	}
 	for i, block := range blocks {
-		result.markRun(block.Name())
+		result.markRun(block.UniqName())
 		resp, err := block.Run(result.OutputStrs())
 		if err != nil {
-			return nil, fmt.Errorf("failed to run block %d, %s: %w", i, block.Name(), err)
+			return nil, fmt.Errorf("failed to run block %d, %s: %w", i, block.UniqName(), err)
 		}
-		result.setOutput(block.Name(), *resp)
+		result.setOutput(block.UniqName(), *resp)
 	}
 	return result, nil
 }
